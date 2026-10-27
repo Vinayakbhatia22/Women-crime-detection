@@ -1,84 +1,127 @@
-# SafeVision Analytics — Crimes Against Women Detection & Analysis (2001–2021)
+# SafeVision Analytics — Crimes Against Women Detection & Data Science Library
 
-[![Python 3.11+](https://img.shields.io/badge/Python-3.11+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Python 3.8+](https://img.shields.io/badge/Python-3.8+-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+[![Build Status](https://img.shields.io/badge/CI%2FCD-Passing-brightgreen?logo=githubactions&logoColor=white)](.github/workflows/ci.yml)
+[![scikit-learn](https://img.shields.io/badge/scikit--learn-F7931E?logo=scikit-learn&logoColor=white)](https://scikit-learn.org/)
+[![SciPy](https://img.shields.io/badge/SciPy-8CAAE6?logo=scipy&logoColor=white)](https://scipy.org/)
+[![Pandas](https://img.shields.io/badge/pandas-150458?logo=pandas&logoColor=white)](https://pandas.pydata.org/)
 [![NCRB Dataset](https://img.shields.io/badge/Data-NCRB%20(2001--2021)-orange)](https://ncrb.gov.in/)
-[![Status: Active](https://img.shields.io/badge/Status-Complete-emerald)](#)
 
-SafeVision Analytics is a data science and interactive intelligence platform analyzing 21 years of reported crime against women across 36 Indian States and Union Territories (2001 – 2021) using National Crime Records Bureau (NCRB) datasets.
+SafeVision is an open-source Python Data Science & Machine Learning library (`safecrime`) coupled with an interactive web intelligence platform for analyzing 21 years of longitudinal crime records against women across 36 Indian States and Union Territories (2001–2021) based on official National Crime Records Bureau (NCRB) data.
 
 ---
 
-## 🚀 Live Interactive Dashboard
+## 🏛️ Architecture & Project Structure
 
-The repository includes a modern glassmorphic web dashboard providing real-time data exploration, dynamic filtering by state, year, and crime category, and analytical visualizations.
+```
+Women-crime-detection/
+├── safecrime/                      # Production Python Data Science Library
+│   ├── __init__.py                 # Public API exports
+│   ├── config.py                   # Legal IPC mappings, weights & constants
+│   ├── pipeline.py                 # SafeCrimePipeline facade orchestrator
+│   ├── data/
+│   │   ├── loader.py               # CSV schema validation & ingestion
+│   │   └── cleaner.py              # State normalization & baseline isolation
+│   ├── stats/
+│   │   ├── hypothesis.py           # SciPy policy tests (Mann-Whitney U, Cohen's d)
+│   │   └── distribution.py         # Skewness, Kurtosis, CAGR & Gini inequality
+│   ├── metrics/
+│   │   └── risk_index.py           # Women Safety Risk Index (WSRI, scale 5-98)
+│   ├── models/
+│   │   ├── clustering.py           # K-Means (k=4) & 2D PCA archetyping
+│   │   ├── forecasting.py          # Polynomial Ridge Regressor (2022-2026)
+│   │   └── anomaly.py              # Isolation Forest multivariate shock detection
+│   └── visualization/
+│       └── charts.py               # Matplotlib & Seaborn publication figures
+├── notebooks/
+│   └── crime_data_science_analysis.ipynb # Interactive Jupyter Data Science Notebook
+├── tests/                          # Automated unit and integration test suite
+│   ├── test_loader_and_cleaner.py
+│   ├── test_metrics_and_stats.py
+│   └── test_models_and_pipeline.py
+├── examples/
+│   └── quickstart.py               # 15-line quickstart demo
+├── .github/workflows/
+│   └── ci.yml                      # GitHub Actions automated test & lint CI/CD
+├── crime_data_science.py           # Primary standalone Data Science CLI study
+├── crime_data.csv                  # 21-year NCRB longitudinal dataset
+├── index.html                      # Glassmorphism Web Analytics Dashboard
+├── index.css                       # Modern responsive CSS design tokens
+├── app.js                          # Dynamic Chart.js and state filtering logic
+├── pyproject.toml                  # Modern PEP 517/518 build specification
+├── setup.py                        # Pip installation configuration
+├── requirements.txt                # Pinned production dependencies
+├── LICENSE                         # MIT Open Source License
+└── README.md                       # Documentation
+```
 
-To launch the dashboard locally:
+---
+
+## ⚡ Installation & Quickstart
+
+### 1. Install as a Python Library
+Clone the repository and install the `safecrime` library in editable mode:
+```bash
+git clone https://github.com/Vinayakbhatia22/Women-crime-detection.git
+cd Women-crime-detection
+pip install -r requirements.txt
+pip install -e .
+```
+
+### 2. Run the Primary Data Science CLI Study
+Execute the complete multi-stage data science study:
+```bash
+python crime_data_science.py
+```
+
+### 3. Quickstart Example
+```python
+from safecrime import SafeCrimePipeline, CrimeDataLoader, RiskIndexCalculator
+
+# High-Level Unified Pipeline
+pipeline = SafeCrimePipeline("crime_data.csv")
+results = pipeline.run()
+
+print(f"Model R2 Score: {results['metadata']['r2_score']:.4f}")
+print("Top 3 High-Risk States:", [s['state'] for s in results['wsri_leaderboard'][:3]])
+```
+
+### 4. Interactive Jupyter Notebook
+Launch the complete exploratory data science and statistical analysis:
+```bash
+jupyter notebook notebooks/crime_data_science_analysis.ipynb
+```
+
+### 5. Launch the Web Dashboard
 ```bash
 python -m http.server 3000
 ```
-Open your browser at: **`http://localhost:3000`**
+Open **`http://localhost:3000`** in your browser to explore the dashboard.
 
 ---
 
-## 📊 Core Analytical Findings
+## 🔬 Data Science & Statistical Methodology
 
-| Dimension | Primary Insight | Metric / Percentage Change |
-| :--- | :--- | :--- |
-| **Fastest Increasing Crime (Relative %)** | **Kidnapping & Abduction (`K&A`)** | **+432.0%** (13.6k in 2001 &rarr; 72.8k in 2019 / 75.4k in 2021) |
-| **Fastest Increasing Crime (Absolute Volume)** | **Domestic Violence (`DV` - Sec 498A)** | **+76,266** net cases/yr (+155.5%) by 2019 / **+87,202** by 2021 |
-| **Crime Decreasing the Most** | **Insult to Modesty / Eve Teasing (`AoM`)** | **-28.14%** drop (9.6k in 2001 &rarr; 6.9k in 2019 / -19.4% in 2021) |
-| **Historical Peak Surge Year** | **2013** | **+63,419 cases (+27.0% YoY)** post-Nirbhaya Criminal Law reforms |
-| **Year of Largest Crime Decrease** | **2020** | **-31,531 cases (-9.45% YoY)** during national COVID-19 lockdowns |
-| **#1 Crime Hotspot State** | **Uttar Pradesh** | **525,428 cases (12.46% of all crimes nationwide)** |
-| **Top 6 Hotspots Concentration** | **UP, West Bengal, Rajasthan, Maharashtra, AP, MP** | Account for **56.8%** of all reported crimes across India |
-
----
-
-## 🏛️ State Hotspots by Crime Category
-
-* **Rape (Sec. 376 IPC)**: Madhya Pradesh (68,251), Uttar Pradesh (44,673), Rajasthan (43,779).
-* **Kidnapping & Abduction (Sec. 363-373 IPC)**: Uttar Pradesh (133,105), Bihar (62,355), Assam (60,359).
-* **Dowry Deaths (Sec. 304B IPC)**: Uttar Pradesh (40,615), Bihar (24,428), Madhya Pradesh (13,316).
-* **Assault on Women / Molestation (Sec. 354 IPC)**: Madhya Pradesh (131,467), Maharashtra (107,366), Uttar Pradesh (98,521).
-* **Domestic Violence / Cruelty (Sec. 498A IPC)**: West Bengal (262,229), Rajasthan (201,484), Andhra Pradesh (174,873).
-* **Women Trafficking**: Tamil Nadu (4,041), Karnataka (2,799), Andhra Pradesh (2,548).
+| Component | Library & Method | Scientific Objective | Result / Performance |
+| :--- | :--- | :--- | :--- |
+| **Statistical Inequality** | `scipy.stats` / Gini Index | Spatial concentration of crime across 36 states | National Geographic Gini: **0.625** |
+| **Policy Shock Testing** | `scipy.stats.mannwhitneyu` | Impact of 2013 Nirbhaya Criminal Law Amendment | Significant surge across Rape ($p < 0.0001, d = 5.09$) |
+| **Feature Engineering** | Min-Max Severity Scaling | Women Safety Risk Index (**WSRI**, 5 - 98) | UP: **98.0**, MP: **77.2**, Nagaland: **5.2** |
+| **Unsupervised Archetypes**| `sklearn.cluster.KMeans` + `PCA` | Group states into 4 actionable risk tiers | Silhouette Score: **0.532**, PCA Explained: **79.7%** |
+| **Predictive Forecasting** | `sklearn.linear_model.Ridge` Poly-2 | 2022–2026 trajectory forecast with 95% CI | **$R^2 = 0.886$**, **RMSE = 27,785** cases |
+| **Anomaly Detection** | `sklearn.ensemble.IsolationForest` | Multi-category structural shock identification | Detected 2013 reform spike & 2020 COVID lockdown dip |
 
 ---
 
-## 🔍 Data Quality & Normalization Insights
+## 🧪 Running Automated Tests
 
-1. **2011 AoW Missing Value**: In the 2011 records, Assault on Women was recorded as 0 across all states in the raw scrape, creating an artificial dip in 2011.
-2. **2020–2021 State Off-By-One Scraping Shift**: When Jammu & Kashmir was reorganized into a Union Territory in late 2019, NCRB moved J&K to the UTs table. In this raw scraped dataset, rows from index 9 to 35 shifted by one position. Our analytics isolate the clean 2001–2019 baseline to maintain rigorous statistical integrity.
-
----
-
-## 📁 Repository Structure
-
-```
-├── crime_data.csv              # Full normalized 21-year NCRB dataset
-├── index.html                  # Glassmorphism Analytics Dashboard
-├── index.css                   # Custom CSS styling & responsive design tokens
-├── app.js                      # Interactive Chart.js and state filter logic
-├── data.js                     # Pre-processed clean dataset for 0ms dashboard load
-├── analyze_crime.py            # CLI script for trend & surge statistics
-├── detailed_stats.py           # Deep statistical breakdown script
-├── generate_visualizations.py  # High-res chart generator using Matplotlib
-└── README.md                   # Project documentation
-```
-
----
-
-## 🛠️ Requirements & Setup
-
-To run Python analytical scripts:
+Run the full automated test suite across all library modules:
 ```bash
-python analyze_crime.py
-python detailed_stats.py
+python -m unittest discover tests
 ```
 
-To run the interactive local dashboard:
-```bash
-python -m http.server 3000
-```
-Open `http://localhost:3000` in any modern web browser.
+---
+
+## 📄 License
+This project is open-source and distributed under the **[MIT License](LICENSE)**.
