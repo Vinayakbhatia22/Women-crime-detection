@@ -137,7 +137,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (window.lucide) lucide.createIcons();
   }
 
-  // 1. Update KPIs
+  // 1. Update KPIs (All 6 Cards Dynamic)
   function updateKPIs(filtered) {
     let total = 0;
     if (currentFilters.crime === 'ALL') {
@@ -163,6 +163,96 @@ document.addEventListener('DOMContentLoaded', () => {
       meta += ` • ${crimeLabels[currentFilters.crime] || currentFilters.crime}`;
     }
     document.getElementById('metaTotalCases').textContent = meta;
+
+    // State-filtered rows across years for growth/surge/drop KPIs
+    const stateRows = currentFilters.state === 'ALL'
+      ? rawData
+      : rawData.filter(r => r.state === currentFilters.state);
+    const sortedYears = [...new Set(stateRows.map(r => r.year))].sort((a, b) => a - b);
+    const firstYr = sortedYears[0] || 2001;
+    const lastYr = sortedYears.includes(2019) && currentFilters.state !== 'ALL' ? 2019 : (sortedYears[sortedYears.length - 1] || 2021);
+
+    // Compute per-crime growth between firstYr and lastYr
+    const growthStats = crimeCols.map(col => {
+      const early = stateRows.filter(r => r.year === firstYr).reduce((s, r) => s + (r[col] || 0), 0);
+      const late = stateRows.filter(r => r.year === lastYr).reduce((s, r) => s + (r[col] || 0), 0);
+      const pct = early > 0 ? ((late - early) / early) * 100 : (late > 0 ? 100 : 0);
+      return { col, early, late, pct };
+    });
+
+    // Card 2: Fastest Growing Crime & Card 4: Most Decreasing Crime
+    const fastestValEl = document.querySelector('#kpiFastest .kpi-value');
+    const fastestMetaEl = document.querySelector('#kpiFastest .kpi-meta');
+    const decValEl = document.querySelector('#kpiDecreasing .kpi-value');
+    const decMetaEl = document.querySelector('#kpiDecreasing .kpi-meta');
+
+    if (fastestValEl && decValEl) {
+      const sortedByGrowth = [...growthStats].sort((a, b) => b.pct - a.pct);
+      const topGrow = sortedByGrowth[0];
+      const lowGrow = sortedByGrowth[sortedByGrowth.length - 1];
+
+      const shortName = (col) => (crimeLabels[col] || col).split('(')[0].trim();
+      fastestValEl.textContent = shortName(topGrow.col);
+      fastestMetaEl.innerHTML = `<strong>${topGrow.pct >= 0 ? '+' : ''}${topGrow.pct.toFixed(1)}%</strong> (${topGrow.early.toLocaleString()} &rarr; ${topGrow.late.toLocaleString()}) • ${firstYr}–${lastYr}`;
+
+      decValEl.textContent = shortName(lowGrow.col);
+      decMetaEl.innerHTML = `<strong>${lowGrow.pct >= 0 ? '+' : ''}${lowGrow.pct.toFixed(1)}%</strong> (${lowGrow.early.toLocaleString()} &rarr; ${lowGrow.late.toLocaleString()}) • ${firstYr}–${lastYr}`;
+    }
+
+    // Card 3: Most Prevalent Category in current filtered selection
+    const prevValEl = document.querySelector('#kpiPrevalent .kpi-value');
+    const prevMetaEl = document.querySelector('#kpiPrevalent .kpi-meta');
+    if (prevValEl && filtered.length > 0) {
+      const colSums = crimeCols.map(col => ({
+        col,
+        sum: filtered.reduce((s, r) => s + (r[col] || 0), 0)
+      })).sort((a, b) => b.sum - a.sum);
+      const grandTotal = colSums.reduce((s, c) => s + c.sum, 0);
+      const topCat = colSums[0];
+      const share = grandTotal > 0 ? ((topCat.sum / grandTotal) * 100).toFixed(1) : '0.0';
+      prevValEl.textContent = (crimeLabels[topCat.col] || topCat.col).split('(')[0].trim();
+      prevMetaEl.innerHTML = `<strong>${share}%</strong> of all crimes &bull; ${topCat.sum.toLocaleString()} cases`;
+    }
+
+    // Card 5: Year of Peak Surge & Card 6: Year of Largest Drop
+    const surgeValEl = document.querySelector('#kpiSurge .kpi-value');
+    const surgeMetaEl = document.querySelector('#kpiSurge .kpi-meta');
+    const dropValEl = document.querySelector('#kpiLockdown .kpi-value');
+    const dropMetaEl = document.querySelector('#kpiLockdown .kpi-meta');
+
+    if (surgeValEl && dropValEl && sortedYears.length >= 2) {
+      const yearlyTotals = sortedYears.map(yr => {
+        const rows = stateRows.filter(r => r.year === yr);
+        const val = currentFilters.crime === 'ALL'
+          ? rows.reduce((s, r) => s + r.total, 0)
+          : rows.reduce((s, r) => s + (r[currentFilters.crime] || 0), 0);
+        return { yr, val };
+      });
+
+      let maxSurge = null;
+      let maxDrop = null;
+      for (let i = 1; i < yearlyTotals.length; i++) {
+        const prev = yearlyTotals[i - 1].val;
+        const curr = yearlyTotals[i].val;
+        if (prev <= 0) continue;
+        const pct = ((curr - prev) / prev) * 100;
+        const diff = curr - prev;
+        if (!maxSurge || pct > maxSurge.pct) maxSurge = { yr: yearlyTotals[i].yr, pct, diff };
+        if (!maxDrop || pct < maxDrop.pct) maxDrop = { yr: yearlyTotals[i].yr, pct, diff };
+      }
+
+      if (maxSurge) {
+        surgeValEl.textContent = `Year ${maxSurge.yr} (${maxSurge.pct >= 0 ? '+' : ''}${maxSurge.pct.toFixed(1)}%)`;
+        surgeMetaEl.textContent = `${maxSurge.diff >= 0 ? '+' : ''}${maxSurge.diff.toLocaleString()} cases vs prior year`;
+      }
+      if (maxDrop && maxDrop.pct < 0) {
+        dropValEl.textContent = `Year ${maxDrop.yr} (${maxDrop.pct.toFixed(2)}%)`;
+        dropMetaEl.textContent = `${maxDrop.diff.toLocaleString()} cases vs prior year`;
+      } else if (maxDrop) {
+        dropValEl.textContent = `Year ${maxDrop.yr} (+${maxDrop.pct.toFixed(1)}%)`;
+        dropMetaEl.textContent = `Lowest YoY change in selected range`;
+      }
+    }
   }
 
   // 2. Trend Chart (Line)
